@@ -1,6 +1,5 @@
-"""Publish a history run next to the viewer. Screenshots become small JPEGs."""
+"""Small JPEGs of a history run's screenshots, next to its results.json in runs/<client>/."""
 
-import json
 import re
 from pathlib import Path
 
@@ -8,7 +7,6 @@ from PIL import Image
 
 from . import storage
 
-WEB = Path("web")
 SHOT_WIDTH = {"fold": 1440, "full": 1000}
 SHOT_MAX_HEIGHT = 9000
 
@@ -19,7 +17,7 @@ def page_id(row):
 
 
 def shot_url(screenshot):
-    return "/history-shots/" + Path(screenshot).with_suffix(".jpg").name
+    return "history-shots/" + Path(screenshot).with_suffix(".jpg").name
 
 
 def save_shot(source, target, width):
@@ -29,8 +27,8 @@ def save_shot(source, target, width):
     image.crop((0, 0, image.width, min(image.height, SHOT_MAX_HEIGHT))).save(target, quality=72)
 
 
-def publish(client, result, rows):
-    shots = WEB / "public" / "history-shots"
+def publish(client, rows):
+    shots = storage.run_dir(client) / "history-shots"
     shots.mkdir(parents=True, exist_ok=True)
     run = storage.run_dir(client)
     for row in rows:
@@ -43,7 +41,3 @@ def publish(client, result, rows):
     for old in shots.iterdir():
         if old.name not in used:
             old.unlink()
-    data = WEB / "src" / "data"
-    data.mkdir(parents=True, exist_ok=True)
-    # history.json, not results.json: the viewer's sample stays whatever `waf sample` wrote.
-    json.dump(result, open(data / "history.json", "w"), default=str)

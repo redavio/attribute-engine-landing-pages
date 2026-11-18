@@ -143,7 +143,7 @@ def run(client):
               "cost": cost_summary(rows), "metric_source": simulate.METRIC_SOURCE}
     path = storage.run_dir(client) / "results.json"
     json.dump(result, open(path, "w"), indent=1, default=str)
-    export.publish(client, result, rows)
+    export.publish(client, rows)
     print(f"{len(rows)} page versions, {len(multi)} URLs with history, "
           f"{time.perf_counter() - started:.1f}s", flush=True)
     return result

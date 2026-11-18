@@ -22,22 +22,22 @@ Requires Python 3.10+ and Node 20+.
 git clone https://github.com/redavio/attribute-engine-landing-pages && cd attribute-engine-landing-pages && pip install -e .
 ```
 
-Then install the browser and the viewer:
+Then install the browser:
 
 ```
 playwright install chromium
-cd web && npm install && cd ..
 ```
 
 ## See the sample (no keys, no cost)
 
 ```
-waf example example
-cd web && VIEWER_PASSCODE=pick-one npm run dev
+cd dashboard && npm install && npm run dev
 ```
 
-Open http://localhost:3000 and enter your passcode. The sample is **Example Co,
-a made-up company**. Its pages, screenshots, tags and rates are all illustrative,
+Open the address it prints. The dashboard reads `dashboard/public/results.json`,
+which ships with the sample. `waf example example` rebuilds it into
+`results.json` at the repo root (copy it to `dashboard/public/`). The sample is
+**Example Co, a made-up company**. Its pages, screenshots, tags and rates are all illustrative,
 with two effects planted on purpose (customer quotes and a prominent CTA) so you
 can see the engine find them.
 
@@ -59,12 +59,25 @@ can see the engine find them.
      Jev is a small model by [TypeSafe](https://typesafe.ai) that answers multiple-choice
      questions about text.
    - `AI_GATEWAY_API_KEY` from [Vercel AI Gateway](https://vercel.com/ai-gateway), for Claude, which tags screenshots. Needs paid credits.
-4. Run `waf sample mysite`, then start the viewer as above. Your results replace
-   the sample.
+4. Run `waf sample mysite`. It writes `results.json` at the repo root: one file
+   with every result, tag and screenshot.
+5. See it in the dashboard:
+
+   ```
+   cp results.json dashboard/public/
+   cd dashboard && npm run dev
+   ```
+
+   Or open any results file with the dashboard's "Open results file" button,
+   or point it at one with `?src=path/to/results.json`.
+
+To share the dashboard with your team, deploy the `dashboard` folder to Vercel
+(or any static host) with your `results.json` in `public/`. The dashboard only
+shows results; runs happen on your machine with `waf`.
 
 Optional: `deploy.sh` and `scripts/setup_secrets.sh` put the run server on your
-own Google Cloud project so people can paste URLs into the viewer and run them
-live. Both read your project from environment variables.
+own Google Cloud project, so an app or AI assistant can run pages through its
+HTTP API. Both read your project from environment variables.
 
 ## Where your data goes
 
@@ -74,13 +87,17 @@ live. Both read your project from environment variables.
   metric never leaves your machine.
 - Page history mode also reads old versions from the Internet Archive.
 - Nothing is sent to Redavio.
-- The viewer is a Next.js app, which sends anonymous usage data to Vercel by
-  default. Run `npx next telemetry disable` once to turn that off.
+- The dashboard is a static page that reads your results file in your browser.
 
 ## Make it yours
 
-- **Look:** colors and fonts live in one file, `web/src/theme.css`. The name in
-  the header is in `web/src/components/brand.tsx`.
+This is a starting point, not a finished product. Fork it and change anything:
+
+- **Brand the dashboard.** It ships unbranded. Set your name and logo in
+  `dashboard/src/brand.ts` and your colors at the top of `dashboard/src/style.css`.
+- **Change the screens or build your own app.** Everything on screen comes from
+  one file, `results.json`. Build your own React app, internal tool or AI agent
+  on it.
 - **Attributes:** add or edit questions and options in
   `config/<site>/attributes.yaml`. Types: number, choice or yes/no. Set
   `default: true` to show one by default. No code changes.

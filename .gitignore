@@ -6,9 +6,10 @@ __pycache__/
 *.egg-info/
 .pytest_cache/
 node_modules/
-.next/
 .vercel/
 runs/
-web/public/history-shots/
-web/src/data/history.json
+/results.json
+dashboard/node_modules/
+dashboard/dist/
 build/
+dashboard/tsconfig.tsbuildinfo

@@ -24,7 +24,7 @@ def main():
         live.publish_sample(args.client)
     elif args.step == "example":
         result = example.build(args.client)
-        print(f"{len(result['pages'])} illustrative pages written to the viewer", flush=True)
+        print(f"{len(result['pages'])} illustrative pages written to {live.RESULTS_FILE}", flush=True)
     elif args.step == "run":
         pipeline.run(args.client)
 

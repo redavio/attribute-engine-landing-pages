@@ -28,6 +28,7 @@ PAGE_TYPE = "page"
 SHOT_WIDTH = {"fold": 1440, "full": 1000}
 SHOT_MAX_HEIGHT = 9000
 SAMPLE_BANNER = "Illustrative data. Not real analytics."
+RESULTS_FILE = Path("results.json")
 
 
 class BadInput(ValueError):
@@ -298,32 +299,26 @@ def catalog(client):
 
 
 def publish_sample(client):
-    """The ready-made result visitors see before they change anything."""
+    """Run the pages in config/<client>/sample.csv and write the results file."""
     root = Path("config") / client
     text = (root / "sample.csv").read_text()
     rows, metric = parse_rows(text)
     config = tagging.load_config(client)
     selected = [a["name"] for a in config["attributes"] if a.get("default")]
-    shots = Path("web/public/shots")
-    shots.mkdir(parents=True, exist_ok=True)
-    for old in shots.iterdir():
-        old.unlink()
-
-    def store(_, name, data):
-        (shots / name).write_bytes(data)
-        return f"/shots/{name}"
-
-    result = execute(rows, metric, selected, [], client, lambda e: print(e, flush=True), store)
-    write_viewer(client, result, text)
-    print(f"{len(result['pages'])} pages, ${result['cost_usd']}", flush=True)
+    result = execute(rows, metric, selected, [], client, lambda e: print(e, flush=True), embed_shot)
+    write_results(client, result)
+    print(f"{len(result['pages'])} pages, ${result['cost_usd']}, written to {RESULTS_FILE}", flush=True)
 
 
-def write_viewer(client, result, sample_csv, web=Path("web")):
-    """The two files the viewer reads: the sample result and the attribute catalog."""
-    data = web / "src" / "data"
-    data.mkdir(parents=True, exist_ok=True)
-    result = {**result, "sample": True, "banner": SAMPLE_BANNER}
-    json.dump(result, open(data / "results.json", "w"), default=str)
-    json.dump({"attributes": catalog(client), "sample_csv": sample_csv, "max_pages": MAX_PAGES},
-              open(data / "catalog.json", "w"))
+def embed_shot(_, name, data):
+    """Screenshots go inside the results file, so the one file carries everything."""
+    return "data:image/jpeg;base64," + base64.b64encode(data).decode()
+
+
+def write_results(client, result, out=None, sample=False):
+    """The one file the dashboard reads."""
+    out = Path(out or RESULTS_FILE)
+    result = {**result, "client": client, "as_of": datetime.now(timezone.utc).date().isoformat(),
+              "sample": sample, **({"banner": SAMPLE_BANNER} if sample else {})}
+    out.write_text(json.dumps(result, default=str))
     return result

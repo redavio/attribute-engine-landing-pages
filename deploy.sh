@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
-# Optional. Deploys the run server to Google Cloud Run in your own project, so the
-# viewer can run pages live. Set these first:
-#   PROJECT=my-gcp-project VIEWER_ORIGIN=https://my-viewer.example.com SITE=example ./deploy.sh
+# Optional. Deploys the run server to Google Cloud Run in your own project, so an
+# app or assistant can run pages through its HTTP API. Set these first:
+#   PROJECT=my-gcp-project SITE=example ./deploy.sh
+# Optional: VIEWER_ORIGIN=https://app.example.com lets that web origin call the server
+# from a browser (CORS). Leave it out when only servers call it.
 # Optional: KEEP_RUNS=0 saves nothing about a run (screenshots come back inline),
 # RUN_SECRET_NAME picks the secret for run tokens, DAILY_RUNS caps runs per day.
 # Expects an image at $REGION-docker.pkg.dev/$PROJECT/server/app:$TAG, a bucket
@@ -10,7 +12,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 PROJECT=${PROJECT:?Set PROJECT to your Google Cloud project}
-VIEWER=${VIEWER_ORIGIN:?Set VIEWER_ORIGIN to where your viewer is hosted}
+VIEWER=${VIEWER_ORIGIN:-}
 SITE=${SITE:-example}
 REGION=${REGION:-us-west1}
 TAG=${1:-latest}

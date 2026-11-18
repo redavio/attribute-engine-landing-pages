@@ -78,7 +78,7 @@ def draw_page(page, company, folder, name):
     return box
 
 
-def build(client, web=Path("web")):
+def build(client, out=None):
     source = yaml.safe_load(open(Path("config") / client / "illustrative_pages.yaml"))
     config = tagging.load_config(client)
     config["attributes"] = [a for a in config["attributes"] if a.get("default")]
@@ -101,17 +101,8 @@ def build(client, web=Path("web")):
     rows = [{k: v for k, v in r.items() if k != "weeks"}
             for r in simulate.simulate(rows, simulate.load_settings(client))]
 
-    shots = web / "public" / "shots"
-    shots.mkdir(parents=True, exist_ok=True)
-    for old in shots.iterdir():
-        old.unlink()
-
-    def store(_, name, data):
-        (shots / name).write_bytes(data)
-        return f"/shots/{name}"
-
-    result = live.score(run_key, rows, "conversion_rate", config, len(rows), store)
+    result = live.score(run_key, rows, "conversion_rate", config, len(rows), live.embed_shot)
     sample_csv = "url,conversion_rate\n" + "".join(
         f"{p['url']},{p['conversion_rate'] * 100:.2f}%\n" for p in result["pages"])
     (Path("config") / client / "sample.csv").write_text(sample_csv)
-    return live.write_viewer(client, result, sample_csv, web)
+    return live.write_results(client, result, out, sample=True)
