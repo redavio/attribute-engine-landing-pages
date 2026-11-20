@@ -117,6 +117,12 @@ This is a starting point, not a finished product. Fork it and change anything:
   `src/website_attribute_finder/simulate.py` with a reader for your analytics
   to use real numbers.
 
+## Run it on OpenAI
+
+Set `AI_PROVIDER=openai` and `OPENAI_API_KEY` to run every AI step (copy labels and screenshot labels)
+on OpenAI instead of Jev and the Vercel gateway. `OPENAI_MODEL` picks the model (default `gpt-4.1-mini`),
+`OPENAI_PRICES` its price per million tokens as `input,output` (default `0.4,1.6`), for the cost report.
+
 ## Cost
 
 About half a cent per page with the five default attributes: a 15-page run cost

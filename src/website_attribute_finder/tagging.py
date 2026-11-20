@@ -11,6 +11,16 @@ from attribute_engine.tag import tag_rows as jev_tag_rows
 from . import attributes, storage, vision
 
 
+def provider_settings(settings):
+    """AI_PROVIDER=openai: every AI step on OpenAI (OPENAI_API_KEY), model OPENAI_MODEL, prices
+    OPENAI_PRICES ("input,output" USD per million tokens). Unset: the settings as they are."""
+    if os.environ.get("AI_PROVIDER") != "openai":
+        return settings
+    model = os.environ.get("OPENAI_MODEL", "gpt-4.1-mini")
+    prices = [float(x) for x in os.environ.get("OPENAI_PRICES", "0.4,1.6").split(",")]
+    return {**settings, "jev_provider": "openai", "openai_model": model, "openai_prices": prices, "vision_model": model}
+
+
 def load_config(client):
     return yaml.safe_load(open(Path("config") / client / "attributes.yaml"))
 
@@ -20,6 +30,7 @@ def tag(rows, client, config):
     limit = config["settings"]["max_copy_chars"]
     # Jev keeps nothing but copy here: no url, no metric, no other columns.
     prepared = [{"copy": r["text"][:limit], "_i": i} for i, r in enumerate(rows)]
+    config = {**config, "settings": provider_settings(config["settings"])}
     jev_config = {**config, "attributes": [a for a in config["attributes"]
                                            if a["computed_by"] == "jev"]}
     jev = (jev_tag_rows(prepared, jev_config, os.environ.get("AI_GATEWAY_API_KEY"))

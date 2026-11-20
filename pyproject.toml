@@ -10,7 +10,7 @@ license = "MIT"
 description = "Find which attributes of your landing pages line up with conversion."
 requires-python = ">=3.10"
 dependencies = [
-    "attribute-engine @ git+https://github.com/redavio/attribute-engine-ad-copy@ac099d0fbdc1ed7b207cd89de04f32ea3f9fb7bc",
+    "attribute-engine @ git+https://github.com/redavio/attribute-engine-ad-copy@5d0640c6f1868aafe4a3e6a54bed704db09cea3a",
     "pillow",
     "playwright==1.64.0",
     "pyyaml",

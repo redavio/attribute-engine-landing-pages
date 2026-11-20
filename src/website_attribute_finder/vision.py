@@ -12,6 +12,20 @@ from PIL import Image
 from . import storage
 
 CHAT_URL = "https://ai-gateway.vercel.sh/v1/chat/completions"
+OPENAI_URL = "https://api.openai.com/v1/chat/completions"
+
+
+def route():
+    """Where vision calls go: OpenAI with AI_PROVIDER=openai, else Vercel AI Gateway."""
+    if os.environ.get("AI_PROVIDER") == "openai":
+        return OPENAI_URL, os.environ["OPENAI_API_KEY"]
+    return CHAT_URL, os.environ["AI_GATEWAY_API_KEY"]
+
+
+def token_cost(usage):
+    """Cost from tokens at OPENAI_PRICES (USD per million, "input,output"), when no cost is reported."""
+    price_in, price_out = (float(x) for x in os.environ.get("OPENAI_PRICES", "0.4,1.6").split(","))
+    return (usage.get("prompt_tokens", 0) * price_in + usage.get("completion_tokens", 0) * price_out) / 1e6
 UNKNOWN = "unknown"
 
 
@@ -50,7 +64,7 @@ def tag_one(row, client, attrs, model, key):
     payload = {"model": model, "max_tokens": 400, "messages": [{"role": "user", "content": [
         {"type": "text", "text": build_prompt(attrs)},
         {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{image}"}}]}]}
-    r = requests.post(CHAT_URL, json=payload, timeout=120,
+    r = requests.post(route()[0], json=payload, timeout=120,
                       headers={"Authorization": f"Bearer {key}"})
     if r.status_code != 200:
         raise RuntimeError(f"Vision call failed ({r.status_code}): {r.text[:300]}")
@@ -60,7 +74,8 @@ def tag_one(row, client, attrs, model, key):
     return {**parse_reply(body["choices"][0]["message"]["content"], attrs),
             "vision_input_tokens": usage.get("prompt_tokens", 0),
             "vision_output_tokens": usage.get("completion_tokens", 0),
-            "vision_cost_usd": float(usage.get("cost", gateway.get("gateway", {}).get("cost", 0)) or 0)}
+            "vision_cost_usd": float(usage.get("cost", gateway.get("gateway", {}).get("cost", 0)) or 0)
+            or (token_cost(usage) if os.environ.get("AI_PROVIDER") == "openai" else 0.0)}
 
 
 SLICE_WIDTH = 900
@@ -88,7 +103,7 @@ def tag_page(row, client, attrs, model, key):
               for i in page_slices(storage.run_dir(client) / row["full_screenshot"])]
     payload = {"model": model, "max_tokens": 400, "messages": [{"role": "user", "content": [
         {"type": "text", "text": build_prompt(attrs, PAGE_INTRO)}, *images]}]}
-    r = requests.post(CHAT_URL, json=payload, timeout=120, headers={"Authorization": f"Bearer {key}"})
+    r = requests.post(route()[0], json=payload, timeout=120, headers={"Authorization": f"Bearer {key}"})
     if r.status_code != 200:
         raise RuntimeError(f"Vision call failed ({r.status_code}): {r.text[:300]}")
     body = r.json()
@@ -96,7 +111,8 @@ def tag_page(row, client, attrs, model, key):
     gateway = body.get("choices", [{}])[0].get("message", {}).get("provider_metadata", {})
     out = parse_reply(body["choices"][0]["message"]["content"], attrs)
     out.pop("render_ok")
-    out["vision_page_cost_usd"] = float(usage.get("cost", gateway.get("gateway", {}).get("cost", 0)) or 0)
+    out["vision_page_cost_usd"] = float(usage.get("cost", gateway.get("gateway", {}).get("cost", 0)) or 0) \
+        or (token_cost(usage) if os.environ.get("AI_PROVIDER") == "openai" else 0.0)
     return out
 
 
@@ -104,7 +120,7 @@ def tag_rows(rows, client, config):
     top, page = vision_attributes(config), vision_attributes(config, "page")
     if not top and not page:
         return [{"render_ok": True} for _ in rows]
-    key = os.environ["AI_GATEWAY_API_KEY"]
+    key = route()[1]
     model = config["settings"]["vision_model"]
 
     def work(row):
