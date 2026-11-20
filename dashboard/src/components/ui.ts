@@ -7,7 +7,7 @@ export const pageName = (url: string) => url.replace(/^https?:\/\/(www\.)?/, "")
 export const liftText = (share: number | null) => (share == null ? "n/a" : `${share >= 0 ? "+" : ""}${Math.round(share * 100)}%`);
 export const corrText = (r: number | null) => (r == null ? "n/a" : r.toFixed(2));
 export const pText = (p: number | null) => (p == null ? "n/a" : p < 0.001 ? "<0.001" : p.toFixed(3));
-export const ORIGIN: Record<Attribute["computed_by"], string> = { jev: "tagged by Jev", vision: "from the screenshot", code: "counted", label: "counted" };
+export const ORIGIN: Record<Attribute["computed_by"], string> = { jev: "tagged by AI", vision: "from the screenshot", code: "counted", label: "counted" };
 export const titleOf = (res: Results, name: string) => res.attributes.find((a) => a.name === name)?.title ?? label(name);
 export const card = (res: Results) => Object.values(res.scorecards)[0]?.card ?? [];
 export const valueOf = (page: Page, a: Attribute) =>
